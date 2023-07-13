@@ -27,6 +27,7 @@ def main():
         shutil.copyfile(sqlite_src + "-wal", sqlite_dst + "-wal")
     except FileNotFoundError as e:
         print("No sticky note data can be found!")
+        print("Please check your sticky note app to make sure if you have notes or not.")
         return -1
 
     with sqlite3.connect(sqlite_dst) as plum_conn:
