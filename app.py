@@ -1,92 +1,85 @@
-import os
-import sys
-import shutil
-import sqlite3
+import tkinter as tk
+import tkinter.ttk as ttk
+from tkinter import messagebox
 
-def get_sticky_note_appdata_path():
-    sticky_note_dir_cache = os.path.expandvars("%TMP%\\sndir.cache")
+from cmds import *
 
-    src_path = os.path.expandvars("%USERPROFILE%\\AppData\\Local\\Packages")
+def main():
 
-    dirname = None
-    if os.path.exists(sticky_note_dir_cache):
-        with open(sticky_note_dir_cache, mode='r') as fhandle:
-            dirname = fhandle.readline()
-    else:
-        for dire in os.listdir(src_path):
-            if "Microsoft.MicrosoftStickyNotes" in dire:
-                with open(sticky_note_dir_cache, mode='w') as fhandle:
-                    fhandle.write(dire)
-                    dirname = dire
-                break
+    def button_action_backup():
+        src = get_sticky_note_appdata_path()
+        dst = get_sticky_note_backup_path()
+        if src is not None:
+            result = messagebox.askyesno(message="This will replace last notes backup, if any.\nAre you sure?")
+            if result:
+                if backup(src, dst):
+                    messagebox.showinfo(message="Your sticky notes has been backed up.")
+                    string_last_version.set(last_backup_version())
+                else:
+                    messagebox.showerror(message="Error has been occurred!")
 
-    return f"{src_path}\\{dirname}\\LocalState\\plum.sqlite" if dirname is not None else None
+    def button_action_restore():
+        src = get_sticky_note_appdata_path()
+        dst = get_sticky_note_backup_path()
+        if src is not None:
+            result = messagebox.askyesno(message="This will replace current notes. Please make sure you already backup your notes.\nAre you sure?")
+            if result:
+                if restore(dst, src):
+                    messagebox.showinfo(message="Your sticky notes has been restored.")
+                else:
+                    messagebox.showerror(message="Error has been occurred!")
 
-def log(err):
-    if err == -1:
-        print("[Error] Sticky Note (from Microsoft) is not installed!")
-    elif err == -2:
-        print("[Error] Sticky Note (from Microsoft) data can not be found!")
-        print("Please make sure if you have notes in the app.")
-    elif err == -3:
-        print("[Error] Sticky Note (from Microsoft) backup data can not be found!")
-        print("Please make sure if you have backup data at least once.")
+    title = "Backup Sticky Notes (from Microsoft)"
 
-def backup(src, dst):
-    result = True
-    try:
-        shutil.copyfile(src, dst)
-        shutil.copyfile(src + "-shm", dst + "-shm")
-        shutil.copyfile(src + "-wal", dst + "-wal")
-    except FileNotFoundError as e:
-        result = False
-    finally:
-        if result:
-            with sqlite3.connect(dst) as plum_conn:
-                plum_cur = plum_conn.cursor()
-                plum_cur.execute("UPDATE Note SET RemoteId = ?, ChangeKey = ?, LastServerVersion = ?, RemoteSchemaVersion = ?, IsRemoteDataInvalid = ?, PendingInsightsScan = ?, Type = ?", (None, None, None, None, None, None, None))
-                #plum_cur.execute("UPDATE Note SET WindowPosition = ? WHERE RemoteId = ?", ("ManagedPosition=", None))
-    return result
+    window = tk.Tk()
 
-def restore(src, dst):
-    result = True
+    frame = ttk.Frame(window, padding=10)
+    frame.grid()
+    frame.winfo_toplevel().title("BSN")
 
-    if os.path.exists(src):
-        shutil.copyfile(src, dst)
-        shutil.move(dst + "-shm", dst + "-shm.bak")
-        shutil.move(dst + "-wal", dst + "-wal.bak")
-    else:
-        result = False
-    
-    return result
+    row = 0
 
-def main(mode):
-    err_code = 0
+    label_title = ttk.Label(
+        master=frame,
+        text=title
+    )
+    label_title.grid(column=0, row=row, columnspan=2)
 
-    sqlite_src = get_sticky_note_appdata_path()
-    sqlite_dst = os.path.expandvars("%USERPROFILE%\\Desktop\\plum.sqlite")
+    row = 1
 
-    if sqlite_src is None:
-        err_code = -1
-    else:
-        if mode == 'backup':
-            if backup(sqlite_src, sqlite_dst):
-                print(f"Your sticky note is backed up at \"{sqlite_dst}\"\n")
-                print(f"To restore your sticky note, place the backed up file in:\n\"{sqlite_src}\"\n\nafter you sign out from sticky note")
-            else:
-                err_code = -2
-        elif mode == 'restore':
-            if restore(sqlite_dst, sqlite_src):
-                print("Your sticky notes has been restored")
-            else:
-                err_code = -3
-        else:
-            print("Mode not recognized! Available mode: 'backup' or 'restore'")
+    label_last_backup = ttk.Label(
+        master=frame,
+        text="Last backup"
+    )
+    label_last_backup.grid(column=0, row=row)
 
-    log(err_code)
-    return err_code
+    last_version = last_backup_version()
+    string_last_version = tk.StringVar()
+    if last_version is not None:
+        string_last_version.set(last_version)
+    label_last_version = ttk.Label(
+        master=frame,
+        textvariable=string_last_version
+    )
+    label_last_version.grid(column=1, row=row)
+
+    row = 2
+
+    button_backup = ttk.Button(
+        master=frame,
+        text="Backup",
+        command=button_action_backup
+    )
+    button_backup.grid(column=0, row=row)
+
+    button_restore = ttk.Button(
+        master=frame,
+        text="Restore",
+        command=button_action_restore
+    )
+    button_restore.grid(column=1, row=row)
+
+    window.mainloop()
 
 if __name__ == '__main__':
-    main(sys.argv[1])
-    
-    
+    main()
