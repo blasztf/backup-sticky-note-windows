@@ -29,9 +29,63 @@ def main():
                 else:
                     messagebox.showerror(message="Error has been occurred!")
 
+    def button_action_migrate():
+        title = "Migration Helper"
+        result = messagebox.askyesno(
+            title=title,
+            message="Hi, we will help you to migrate your sticky notes from one account to another. Please follow the steps carefully.\n Do you want to continue?"
+        )
+
+        if result:
+            messagebox.showinfo(
+                title=title,
+                message="First, we will backup your sticky notes. Please make sure you have already sync your sticky notes by go to the 'Settings' (click gear icon in the top-right) and then click 'Sync Now' button (available when signed in) before we backup your sticky notes in local."
+            )
+            button_action_backup()
+            result = messagebox.askyesno(
+                title=title,
+                message="Is the backup process completed successfully?"
+            )
+
+            if result:
+                messagebox.showinfo(
+                    title=title,
+                    message="Next, you must sign out the sticky notes app from your account. After that, click 'Ok' to continue."
+                )
+                messagebox.showinfo(
+                    title=title,
+                    message="Now, we will restore your sticky notes."
+                )
+                button_action_restore()
+                result = messagebox.askyesno(
+                    title=title,
+                    message="Is the restore process completed successfully?"
+                )
+
+                if result:
+                    messagebox.showinfo(
+                        title=title,
+                        message="For the last step, you can sign in to your new account and then sync your sticky notes by go to the 'Settings' (click gear icon in the top-right) and then click 'Sync Now' button (available when signed in)."
+                    )
+                    messagebox.showinfo(
+                        title=title,
+                        message="Done.\nCongratulation, you have migrate your sticky notes from old account to your new account. Please make sure again if everything is ok."
+                    )
+                else:
+                    messagebox.showerror(
+                        title=title,
+                        message="Error has been occurred!"
+                    )
+            else:
+                messagebox.showerror(
+                    title=title,
+                    message="Error has been occurred!"
+                )
+
     title = "Backup Sticky Notes (from Microsoft)"
 
     window = tk.Tk()
+    window.resizable(False, False)
 
     frame = ttk.Frame(window, padding=10)
     frame.grid()
@@ -51,7 +105,7 @@ def main():
         master=frame,
         text="Last backup"
     )
-    label_last_backup.grid(column=0, row=row)
+    label_last_backup.grid(column=0, row=row, sticky='W')
 
     last_version = last_backup_version()
     string_last_version = tk.StringVar()
@@ -61,7 +115,7 @@ def main():
         master=frame,
         textvariable=string_last_version
     )
-    label_last_version.grid(column=1, row=row)
+    label_last_version.grid(column=1, row=row, sticky='E')
 
     row = 2
 
@@ -70,14 +124,23 @@ def main():
         text="Backup",
         command=button_action_backup
     )
-    button_backup.grid(column=0, row=row)
+    button_backup.grid(column=0, row=row, sticky='W')
 
     button_restore = ttk.Button(
         master=frame,
         text="Restore",
         command=button_action_restore
     )
-    button_restore.grid(column=1, row=row)
+    button_restore.grid(column=1, row=row, sticky='E')
+
+    row = 3
+
+    button_migrate = ttk.Button(
+        master=frame,
+        text="Sticky Notes Migration",
+        command=button_action_migrate
+    )
+    button_migrate.grid(column=0, row=row, columnspan=2)
 
     window.mainloop()
 
