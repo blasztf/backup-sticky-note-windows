@@ -37,32 +37,37 @@ def log(err):
         print("Please make sure if you have backup data at least once.")
 
 def backup(src, dst):
-    result = True
-    try:
+    if os.path.exists(src):
         shutil.copyfile(src, dst)
+    else:
+        return False
+
+    try:
         shutil.copyfile(src + "-shm", dst + "-shm")
         shutil.copyfile(src + "-wal", dst + "-wal")
     except FileNotFoundError as e:
-        result = False
+        pass
     finally:
-        if result:
-            with sqlite3.connect(dst) as plum_conn:
-                plum_cur = plum_conn.cursor()
-                plum_cur.execute("UPDATE Note SET RemoteId = ?, ChangeKey = ?, LastServerVersion = ?, RemoteSchemaVersion = ?, IsRemoteDataInvalid = ?, PendingInsightsScan = ?, Type = ?", (None, None, None, None, None, None, None))
-                #plum_cur.execute("UPDATE Note SET WindowPosition = ? WHERE RemoteId = ?", ("ManagedPosition=", None))
-    return result
+        with sqlite3.connect(dst) as plum_conn:
+            plum_cur = plum_conn.cursor()
+            plum_cur.execute("UPDATE Note SET RemoteId = ?, ChangeKey = ?, LastServerVersion = ?, RemoteSchemaVersion = ?, IsRemoteDataInvalid = ?, PendingInsightsScan = ?, Type = ?", (None, None, None, None, None, None, None))
+            #plum_cur.execute("UPDATE Note SET WindowPosition = ? WHERE RemoteId = ?", ("ManagedPosition=", None))
+    
+    return True
 
 def restore(src, dst):
-    result = True
-
     if os.path.exists(src):
         shutil.copyfile(src, dst)
-        # shutil.move(dst + "-shm", dst + "-shm.bak")
-        # shutil.move(dst + "-wal", dst + "-wal.bak")
     else:
-        result = False
+        return False
+
+    try:
+        shutil.move(dst + "-shm", dst + "-shm.bak")
+        shutil.move(dst + "-wal", dst + "-wal.bak")
+    except FileNotFoundError as e:
+        pass
     
-    return result
+    return True
 
 def last_backup_version():
     dst = get_sticky_note_backup_path()

@@ -6,6 +6,63 @@ from cmds import *
 
 def main():
 
+    def resource_path(filename):
+        exe_dir = os.path.dirname(os.path.abspath(__file__))
+        image_path = os.path.join(exe_dir, filename)
+
+        return image_path
+
+    def read_version():
+        l = None
+        with open(resource_path('VERSION'), mode='r') as f:
+            l = f.readline()
+        return l
+
+    def read_license():
+        l = None
+        with open(resource_path('LICENSE'), mode='r') as f:
+            l = f.readlines()
+        return l
+
+    def window_about():
+        windowa = tk.Toplevel()
+        windowa.iconbitmap("icon.ico")
+
+        framea = ttk.Frame(windowa, width=200, height=100, padding=10)
+        framea.grid()
+        framea.winfo_toplevel().title("About")
+
+        scrollbara = ttk.Scrollbar(
+            master=framea,
+            orient='vertical'
+        )
+        scrollbara.pack(side=tk.RIGHT, fill='y')
+
+        licenses = read_license()
+        versions = read_version()
+
+        texta = tk.Text(
+            master=framea,
+            yscrollcommand=scrollbara.set,
+
+        )
+
+        texta.insert(tk.END, versions)
+        texta.insert(tk.END, "\n\n")
+
+        for line in licenses:
+            texta.insert(tk.END, line)
+
+        texta.config(state=tk.DISABLED)
+
+        scrollbara.config(command=texta.yview)
+
+        texta.pack()
+        
+
+    def button_action_about():
+        window_about()
+
     def button_action_backup():
         src = get_sticky_note_appdata_path()
         dst = get_sticky_note_backup_path()
@@ -13,8 +70,8 @@ def main():
             result = messagebox.askyesno(message="This will replace last notes backup, if any.\nAre you sure?")
             if result:
                 if backup(src, dst):
-                    messagebox.showinfo(message="Your sticky notes has been backed up.")
                     string_last_version.set(last_backup_version())
+                    messagebox.showinfo(message="Your sticky notes has been backed up.")
                 else:
                     messagebox.showerror(message="Error has been occurred!")
 
@@ -85,6 +142,7 @@ def main():
     title = "Backup Sticky Notes (from Microsoft)"
 
     window = tk.Tk()
+    window.iconbitmap("icon.ico")
     window.resizable(False, False)
 
     frame = ttk.Frame(window, padding=10)
@@ -141,6 +199,15 @@ def main():
         command=button_action_migrate
     )
     button_migrate.grid(column=0, row=row, columnspan=2)
+
+    row = 4
+
+    button_about = ttk.Button(
+        master=frame,
+        text="About",
+        command=button_action_about
+    )
+    button_about.grid(column=0, row=row, columnspan=2)
 
     window.mainloop()
 
